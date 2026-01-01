@@ -320,7 +320,13 @@ if(APPLE)
 endif()
 
 # Set up Qt
-qt6_standard_project_setup()
+if(COMMAND qt6_standard_project_setup)
+    qt6_standard_project_setup()
+else()
+    set(CMAKE_AUTOMOC ON)
+    set(CMAKE_AUTORCC ON)
+    set(CMAKE_AUTOUIC ON)
+endif()
 
 # Source files
 set(SOURCES
