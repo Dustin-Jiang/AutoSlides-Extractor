@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=AutoSlides Extractor
+Comment=Extract slides from video presentations
+Exec=/usr/bin/AutoSlidesExtractor
+Icon=autoslides-extractor
+Terminal=false
+Categories=Video;Utility;
+Keywords=video;slides;extractor;presentation;
