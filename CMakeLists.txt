@@ -30,6 +30,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 # Set default build type if not specified
 if(NOT CMAKE_BUILD_TYPE)
@@ -118,22 +119,28 @@ if(CPU_ARCH STREQUAL "ARM64")
 
 elseif(CPU_ARCH STREQUAL "x86_64" OR CPU_ARCH STREQUAL "x86")
     # x86/x64 SIMD detection
+    # We do not enable these globally to avoid polluting the binary with instructions
+    # that might not be supported on the target machine.
+    # Instead, we use function multi-versioning or target attributes in the source code.
+    
+    # Check for compiler support but don't enable globally
     check_cxx_compiler_flag("-msse4.2" COMPILER_SUPPORTS_SSE42)
     check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
     check_cxx_compiler_flag("-mavx512f" COMPILER_SUPPORTS_AVX512)
 
     if(COMPILER_SUPPORTS_AVX512)
-        set(SIMD_FLAGS "${SIMD_FLAGS} -mavx512f -mavx512bw -mavx512vl")
         list(APPEND SIMD_DEFINITIONS "-DAVX512_AVAILABLE")
-        message(STATUS "Enabled AVX512 SIMD support")
-    elseif(COMPILER_SUPPORTS_AVX2)
-        set(SIMD_FLAGS "${SIMD_FLAGS} -mavx2")
+        message(STATUS "AVX512 supported by compiler (will be used via attributes)")
+    endif()
+    
+    if(COMPILER_SUPPORTS_AVX2)
         list(APPEND SIMD_DEFINITIONS "-DAVX2_AVAILABLE")
-        message(STATUS "Enabled AVX2 SIMD support")
-    elseif(COMPILER_SUPPORTS_SSE42)
-        set(SIMD_FLAGS "${SIMD_FLAGS} -msse4.2")
+        message(STATUS "AVX2 supported by compiler (will be used via attributes)")
+    endif()
+    
+    if(COMPILER_SUPPORTS_SSE42)
         list(APPEND SIMD_DEFINITIONS "-DSSE42_AVAILABLE")
-        message(STATUS "Enabled SSE4.2 SIMD support")
+        message(STATUS "SSE4.2 supported by compiler (will be used via attributes)")
     endif()
 endif()
 
@@ -313,7 +320,13 @@ if(APPLE)
 endif()
 
 # Set up Qt
-qt6_standard_project_setup()
+if(COMMAND qt6_standard_project_setup)
+    qt6_standard_project_setup()
+else()
+    set(CMAKE_AUTOMOC ON)
+    set(CMAKE_AUTORCC ON)
+    set(CMAKE_AUTOUIC ON)
+endif()
 
 # Source files
 set(SOURCES
@@ -340,7 +353,7 @@ set(SOURCES
 
 # Add Windows resource file for icon
 if(WIN32)
-    list(APPEND SOURCES resources/AutoSlidesExtractor.rc)
+    list(APPEND SOURCES resources/win32/AutoSlidesExtractor.rc)
 endif()
 
 # Header files
